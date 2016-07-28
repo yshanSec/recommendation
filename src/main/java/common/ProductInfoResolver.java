@@ -27,28 +27,7 @@ public class ProductInfoResolver {
     // log
     private static Logger log = Logger.getLogger(ProductInfoResolver.class.getName());
     //product
-    HashMap productMap = null;
-
-    class ProductHashMap extends HashMap{
-        public ProductHashMap(ResultSet resultSet) throws SQLException{
-            this.put("id", resultSet.getString("id"));
-            this.put("price", resultSet.getString("price"));
-            this.put("brand", resultSet.getString("brand"));
-            this.put("category", resultSet.getString("category"));
-            this.put("subcategory", resultSet.getString("sub_category"));
-            this.put("ex_color", resultSet.getString("ex_color"));
-
-            JSONObject tags = new JSONObject(resultSet.getString("tags"));
-            this.put("pattern", tags.getJSONArray("3").getString(0));
-
-            ArrayList<String> cutting = null;
-            JSONArray cuttingJsonArray = tags.getJSONArray("5");
-            for(int i = 0; i < cuttingJsonArray.length(); i++){
-                cutting.add(cuttingJsonArray.getString(i));
-            }
-            this.put("cutting", cutting);
-        }
-    }
+    private HashMap productMap = null;
 
     public ProductInfoResolver(ConfFromProperties conf){
         String host = conf.getValue("host");
@@ -83,6 +62,30 @@ public class ProductInfoResolver {
         }
         else{
             return (String) productHashMap.get(fieldName);
+        }
+    }
+    class ProductHashMap extends HashMap{
+        public ProductHashMap(ResultSet resultSet) throws SQLException{
+            this.put("id", resultSet.getString("id"));
+            this.put("price", resultSet.getString("price"));
+            this.put("brand", resultSet.getString("brand_id"));
+            this.put("category", resultSet.getString("category"));
+            this.put("subcategory", resultSet.getString("sub_category"));
+            this.put("ex_color", resultSet.getString("ex_color"));
+
+            JSONObject tags = new JSONObject(resultSet.getString("tags"));
+            try{
+                this.put("pattern", tags.getJSONArray("3").getString(0));
+            }
+            catch (Exception e){
+                this.put("pattern", "-1");
+            }
+            ArrayList<String> cutting = null;
+            JSONArray cuttingJsonArray = tags.getJSONArray("5");
+            for(int i = 0; i < cuttingJsonArray.length(); i++){
+                cutting.add(cuttingJsonArray.getString(i));
+            }
+            this.put("cutting", cutting);
         }
     }
 }
