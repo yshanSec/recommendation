@@ -26,9 +26,6 @@ public class ConfFromProperties {
         catch(Exception e){
             log.error("Configuration File Error: " + e);
         }
-        finally {
-            this.inputStream.close();
-        }
         return;
     }
     public String getValue(String key){

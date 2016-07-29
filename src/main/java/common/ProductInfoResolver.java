@@ -4,6 +4,7 @@ import config.ConfFromProperties;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import scala.Serializable;
 
 import java.io.File;
 import java.sql.Connection;
@@ -27,7 +28,7 @@ public class ProductInfoResolver {
     // log
     private static Logger log = Logger.getLogger(ProductInfoResolver.class.getName());
     //product
-    private HashMap productMap = null;
+    private HashMap productMap = new HashMap();
 
     public ProductInfoResolver(ConfFromProperties conf){
         String host = conf.getValue("host");
@@ -45,7 +46,7 @@ public class ProductInfoResolver {
             this.statement = conn.createStatement();
             resultSet = this.statement.executeQuery(this.ProductQuery);
             while(resultSet.next()){
-                this.productMap.put(resultSet.getLong("id"),new ProductHashMap(resultSet));
+                this.productMap.put(resultSet.getString("id"),new ProductHashMap(resultSet));
             }
         } catch (SQLException e){
             this.log.error("MySQL Connection Error:" + e);
@@ -60,6 +61,9 @@ public class ProductInfoResolver {
         else if(fieldName=="price"){
             return "p".concat((String) productHashMap.get(fieldName));
         }
+        else if(fieldName=="cutting"){
+            return (ArrayList<String>) productHashMap.get(fieldName);
+        }
         else{
             return (String) productHashMap.get(fieldName);
         }
@@ -71,21 +75,30 @@ public class ProductInfoResolver {
             this.put("brand", resultSet.getString("brand_id"));
             this.put("category", resultSet.getString("category"));
             this.put("subcategory", resultSet.getString("sub_category"));
-            this.put("ex_color", resultSet.getString("ex_color"));
+            this.put("color", resultSet.getString("ex_color"));
 
             JSONObject tags = new JSONObject(resultSet.getString("tags"));
             try{
                 this.put("pattern", tags.getJSONArray("3").getString(0));
             }
             catch (Exception e){
+                log.trace("The product {id} can't find pattern".replaceAll("\\{id\\}",(String) this.get("id")));
                 this.put("pattern", "-1");
             }
-            ArrayList<String> cutting = null;
-            JSONArray cuttingJsonArray = tags.getJSONArray("5");
-            for(int i = 0; i < cuttingJsonArray.length(); i++){
-                cutting.add(cuttingJsonArray.getString(i));
+            ArrayList<String> cutting = new ArrayList<String>();
+            try{
+                JSONArray cuttingJsonArray = tags.getJSONArray("5");
+                for(int i = 0; i < cuttingJsonArray.length(); i++) {
+                    cutting.add(cuttingJsonArray.getString(i));
+                }
             }
-            this.put("cutting", cutting);
+            catch (Exception e){
+                log.trace("The product {id} can't find cutting".replaceAll("\\{id\\}",(String) this.get("id")));
+            }
+            finally {
+                this.put("cutting", cutting);
+            }
+
         }
     }
 }
