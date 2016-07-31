@@ -9,8 +9,10 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import config.ConfFromProperties;
 import org.apache.spark.broadcast.Broadcast;
-
+import scala.Tuple2;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by yishan on 27/7/16.
@@ -49,7 +51,7 @@ public class UserProfiling {
         UserProfiling.productInfoResolverBroeadcast = sparkcontext.broadcast(new ProductInfoResolver(UserProfiling.userProfilingConf));
 
         JavaRDD<String> userLoggerFileRDD = sparkcontext.textFile(UserProfiling.productLoggerPath);
-        JavaPairRDD<String, String> pairs = userLoggerFileRDD.flatMapToPair(new ProductFlatMap());
-
+        JavaPairRDD<String, HashMap<String, ArrayList<Tuple2<String, Integer>>>> elementParis = userLoggerFileRDD.flatMapToPair(new ProductFlatMap());
+        elementParis.reduceByKey(new ProductReduce());
     }
 }

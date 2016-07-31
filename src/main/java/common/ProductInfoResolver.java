@@ -4,9 +4,7 @@ import config.ConfFromProperties;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import scala.Serializable;
-
-import java.io.File;
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -18,11 +16,9 @@ import java.util.HashMap;
 /**
  * Created by yishan on 28/7/16.
  */
-public class ProductInfoResolver {
+public class ProductInfoResolver implements Serializable{
     // mysql
-    private static String mysqlURLPrefix = "jdbc:mysql://";
-    private Connection conn = null;
-    private Statement statement = null;
+    static String mysqlURLPrefix = "jdbc:mysql://";
     // sql query
     private String ProductQuery = "select id, tags, ex_color, price, brand_id, sub_category, category from deja.product";
     // log
@@ -31,6 +27,9 @@ public class ProductInfoResolver {
     private HashMap productMap = new HashMap();
 
     public ProductInfoResolver(ConfFromProperties conf){
+        Connection conn = null;
+        Statement statement = null;
+
         String host = conf.getValue("host");
         String port = conf.getValue("port");
         String db =conf.getValue("db");
@@ -42,9 +41,9 @@ public class ProductInfoResolver {
         ResultSet resultSet = null;
 
         try{
-            this.conn = DriverManager.getConnection(mysqlHost,username,passwd);
-            this.statement = conn.createStatement();
-            resultSet = this.statement.executeQuery(this.ProductQuery);
+            conn = DriverManager.getConnection(mysqlHost,username,passwd);
+            statement = conn.createStatement();
+            resultSet = statement.executeQuery(this.ProductQuery);
             while(resultSet.next()){
                 this.productMap.put(resultSet.getString("id"),new ProductHashMap(resultSet));
             }
@@ -53,21 +52,30 @@ public class ProductInfoResolver {
         }
 
     }
+    public String classfyPrice(Integer price){
+        return PriceClassfier.search(price);
+    }
+
     public Object getProductInfo(String productId,String fieldName){
         ProductHashMap productHashMap = (ProductHashMap) this.productMap.get(productId);
         if(fieldName=="brand"){
+            if(productHashMap==null) return "-1";
             return "b".concat((String) productHashMap.get(fieldName));
         }
         else if(fieldName=="price"){
-            return "p".concat((String) productHashMap.get(fieldName));
+            if(productHashMap==null) return "-1";
+            return "p".concat(classfyPrice((Integer) productHashMap.get(fieldName)));
         }
         else if(fieldName=="cutting"){
+            if(productHashMap==null) return new ArrayList<String>();
             return (ArrayList<String>) productHashMap.get(fieldName);
         }
         else{
+            if(productHashMap==null) return "-1";
             return (String) productHashMap.get(fieldName);
         }
     }
+
     class ProductHashMap extends HashMap{
         public ProductHashMap(ResultSet resultSet) throws SQLException{
             this.put("id", resultSet.getString("id"));
